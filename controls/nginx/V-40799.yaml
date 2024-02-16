@@ -1,0 +1,51 @@
+- name: Check for access_log directive in NGINX configuration within the container
+  ansible.builtin.shell: docker exec "{{ container_name }}" grep -E 'access_log' /etc/nginx/nginx.conf
+  register: access_log_check
+  ignore_errors: yes
+  changed_when: false
+
+- name: Verify access_log directive is present within the container
+  ansible.builtin.fail:
+    msg: "access_log directive is missing in NGINX configuration within the container."
+  when: access_log_check.rc != 0
+  ignore_errors: yes
+  changed_when: false
+
+- name: Check for error_log directive in NGINX configuration within the container
+  ansible.builtin.shell: docker exec "{{ container_name }}" grep -E 'error_log' /etc/nginx/nginx.conf
+  register: error_log_check
+  ignore_errors: yes
+  changed_when: false
+
+- name: Verify error_log directive is present within the container
+  ansible.builtin.fail:
+    msg: "error_log directive is missing in NGINX configuration within the container."
+  when: error_log_check.rc != 0
+  ignore_errors: yes
+  changed_when: false
+
+- name: Verify access.log is symlinked to stdout in Docker within the container
+  ansible.builtin.shell: docker exec "{{ container_name }}" readlink /var/log/nginx/access.log
+  register: access_log_symlink
+  ignore_errors: yes
+  changed_when: false
+
+- name: Fail if access.log is not symlinked to stdout in Docker within the container
+  ansible.builtin.fail:
+    msg: "access.log is not symlinked to stdout in Docker environment within the container."
+  when: access_log_symlink.stdout != "/dev/stdout"
+  ignore_errors: yes
+  changed_when: false
+
+- name: Verify error.log is symlinked to stderr in Docker within the container
+  ansible.builtin.shell: docker exec "{{ container_name }}" readlink /var/log/nginx/error.log
+  register: error_log_symlink
+  ignore_errors: yes
+  changed_when: false
+
+- name: Fail if error.log is not symlinked to stderr in Docker within the container
+  ansible.builtin.fail:
+    msg: "error.log is not symlinked to stderr in Docker environment within the container."
+  when: error_log_symlink.stdout != "/dev/stderr"
+  ignore_errors: yes
+  changed_when: false

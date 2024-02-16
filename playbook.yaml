@@ -1,0 +1,18 @@
+---
+- name: Execute STIG Checks on a container
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  tasks:
+    - name: Load all nginx stig controls
+      find:
+        paths: controls/nginx
+        patterns: '*.yaml'
+      register: stig_files
+
+    - name: Execute nginx stig control checks
+      include_tasks: "{{ item.path }}"
+      vars:
+        container_name: "{{ container_name }}"
+      loop: "{{ stig_files.files }}"

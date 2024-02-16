@@ -1,0 +1,35 @@
+- name: Check for ssl_prefer_server_ciphers directive in NGINX configuration within the container
+  ansible.builtin.shell: docker exec "{{ container_name }}" grep -E 'ssl_prefer_server_ciphers' /etc/nginx/nginx.conf
+  register: ssl_prefer_server_ciphers_check
+  ignore_errors: yes
+  changed_when: false
+  failed_when: ssl_prefer_server_ciphers_check.rc != 0
+
+- name: Verify ssl_prefer_server_ciphers directive is set to 'on' within the container
+  ansible.builtin.fail:
+    msg: "ssl_prefer_server_ciphers directive is not set to 'on' in NGINX configuration within the container."
+  when: "'on' not in ssl_prefer_server_ciphers_check.stdout"
+  ignore_errors: yes
+  changed_when: false
+
+- name: Check for ssl_ciphers directive in NGINX configuration within the container
+  ansible.builtin.shell: docker exec "{{ container_name }}" grep -E 'ssl_ciphers' /etc/nginx/nginx.conf
+  register: ssl_ciphers_check
+  ignore_errors: yes
+  changed_when: false
+  failed_when: ssl_ciphers_check.rc != 0
+
+- name: Verify ssl_ciphers directive uses approved ciphers within the container
+  ansible.builtin.shell: docker exec "{{ container_name }}" grep -Eo 'ssl_ciphers [^;]+' /etc/nginx/nginx.conf
+  register: ssl_ciphers
+  ignore_errors: yes
+  changed_when: false
+  failed_when: "'APPROVED_CIPHERS_REGEX' not in ssl_ciphers.stdout"
+
+- name: Fail if unapproved ciphers are found in ssl_ciphers directive within the container
+  ansible.builtin.fail:
+    msg: "Found unapproved ciphers in ssl_ciphers directive within the container."
+  when: >
+    ssl_ciphers.stdout_lines | select('match', 'APPROVED_CIPHERS_REGEX') | list | length == 0
+  ignore_errors: yes
+  changed_when: false

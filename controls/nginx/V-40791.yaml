@@ -1,0 +1,25 @@
+- name: Check for limit_conn_zone directive in NGINX configuration within the container
+  ansible.builtin.shell: docker exec "{{ container_name }}" grep -E 'limit_conn_zone' /etc/nginx/nginx.conf
+  register: limit_conn_zone
+  changed_when: false
+  ignore_errors: yes
+
+- name: Verify limit_conn_zone directive is present within the container
+  ansible.builtin.fail:
+    msg: "limit_conn_zone directive is missing in NGINX configuration within the container."
+  when: limit_conn_zone.rc != 0
+  changed_when: false
+  ignore_errors: yes
+
+- name: Check for limit_conn directive in NGINX configuration within the container
+  ansible.builtin.shell: docker exec "{{ container_name }}" grep -E 'limit_conn' /etc/nginx/nginx.conf
+  register: limit_conn
+  changed_when: false
+  ignore_errors: yes
+
+- name: Verify limit_conn directive is present within the container
+  ansible.builtin.fail:
+    msg: "limit_conn directive is missing in NGINX configuration within the container."
+  when: limit_conn.rc != 0
+  changed_when: false
+  ignore_errors: yes
